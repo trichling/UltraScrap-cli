@@ -4,8 +4,9 @@ import { fetchSongTxt } from "./fetchSongTxt.js"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { fetchSongYouTubeLink } from "./fetchSongYouTubeLink.js";
 import { createWriteStream } from 'node:fs'
-import ytdl from "ytdl-core";
+import { youtubeDl, Flags, DownloaderOptions } from "youtube-dl-exec";
 import { prompt } from "../index.js";
+import path from "node:path";
 
 /**
  * Download asynchronously song from the database
@@ -68,14 +69,20 @@ const rawDownload = async (link: string, dirPath: string, audioFilename: string,
     console.log('Starting to download video and audio')
 
 
-    await promiseDownload(link, dirPath, audioFilename, 'Downloaded audio file', {
-        filter: 'audioonly',
-        quality: 'highestaudio',
-
-    })
+    await promiseDownloadWithFlags(link, dirPath, audioFilename, 'Downloaded audio file', 
+        {
+            extractAudio: true,
+            audioFormat: 'mp3'
+        },
+        {
+            path: dirPath,
+            output: audioFilename,
+        })
 
     await promiseDownload(link, dirPath, videoFilename, 'Downloaded video file', {
-        filter: 'videoonly',
+            path: dirPath,
+            output: videoFilename,
+            format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
     })
 }
 
@@ -90,19 +97,34 @@ const rawDownload = async (link: string, dirPath: string, audioFilename: string,
  * @param options YTDL download options
  * @returns True if successful, false if there was an error
  */
-const promiseDownload = (link: string, dirPath: string, filename: string, endString: string, options?: ytdl.downloadOptions): Promise<boolean> => {
+const promiseDownload = (link: string, dirPath: string, filename: string, endString: string, options?: DownloaderOptions): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-        const stream = ytdl(link, options);
 
-        stream.pipe(createWriteStream(`${dirPath}/${filename}`));
+        youtubeDl(link, options)
+            .then((result) => {
+                console.log(endString);
+                resolve(true);
+            })
+            .catch((err) => {
+                console.error(`Error downloading ${filename}: ${err}`);
+                reject(false);
+            });
 
-        stream.on('end', () => {
-            console.log(endString);
-            resolve(true)
-        });
-        stream.on('error', () => {
-            console.log('Error during downloading');
-            reject(false)
-        });
-    })
+    });
+}
+
+const promiseDownloadWithFlags = (link: string, dirPath: string, filename: string, endString: string, flags?: Flags, options?: DownloaderOptions): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+
+        youtubeDl(link, {...flags, ...options})
+            .then((result) => {
+                console.log(endString);
+                resolve(true);
+            })
+            .catch((err) => {
+                console.error(`Error downloading ${filename}: ${err}`);
+                reject(false);
+            });
+
+    });
 }

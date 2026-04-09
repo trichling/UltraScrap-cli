@@ -97,8 +97,8 @@ export const downloadSong = (
             if (!parsed) return;
             const headers = {
                 ...parsed.headers,
-                mp3: "video.mp4",
-                video: "video.mp4",
+                mp3: "video.mp3",
+                video: "video.mp3",
                 cover: "cover.jpg",
             } as Record<string, string | undefined>;
             const headerLines = Object.entries(headers)
@@ -114,13 +114,13 @@ export const downloadSong = (
                     e instanceof Error ? e : new Error("Failed to write lyrics"),
             });
         });
-
+        
         const videoEff = downloadYoutubeVideoWithProgress(
             normalizedLink,
-            join(songDir, "video.mp4"),
+            join(songDir, "video.mp3"),
             (p) => onProgress?.(p.percent ?? 0),
         );
-
+        
         // run in parallel
         yield* Effect.all([coverEff, lyricsEff, videoEff], { concurrency: 3 });
 

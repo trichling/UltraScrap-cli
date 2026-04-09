@@ -11,8 +11,8 @@ export const downloadYoutubeVideo = (
 ): Effect.Effect<void, Error, never> =>
   Effect.tryPromise({
     try: async () => {
-      const args = ["-S", "ext,res:1080", "-o", path, "--", link];
-
+      //const args = ["-S", "ext,res:1080", "-o", path, "--", link];
+      const args = ["-x", "--audio-format", "mp3", "-o", path, "--", link]; // me
       await new Promise<void>((resolve, reject) => {
         const child = spawn("yt-dlp", args, {
           stdio: ["ignore", "ignore", "ignore"],
@@ -20,12 +20,12 @@ export const downloadYoutubeVideo = (
         child.on("error", (err) => reject(err));
         child.on("close", (code) => {
           if (code === 0) resolve();
-          else reject(new Error(`yt-dlp download failed (code ${code})`));
+          else reject(new Error(`[downloadYoutubeVideo] yt-dlp download failed (code ${code})`));
         });
       });
     },
     catch: (e) =>
-      e instanceof Error ? e : new Error("Failed to download youtube video"),
+      e instanceof Error ? e : new Error("[downloadYoutubeVideo] Failed to download youtube video"),
   });
 
 export type YoutubeDownloadProgress = {
@@ -55,8 +55,11 @@ export const downloadYoutubeVideoWithProgress = (
   Effect.tryPromise({
     try: async () => {
       const args = [
-        "-S",
-        "ext,res:1080",
+        // "-S",
+        // "ext,res:1080",
+        "-x",
+        "--audio-format", 
+        "mp3",
         "-o",
         path,
         "--quiet",
@@ -162,7 +165,7 @@ export const downloadYoutubeVideoWithProgress = (
             onProgress({ percent: 1 });
             resolve();
           } else {
-            reject(new Error(`yt-dlp download failed (code ${code})`));
+           reject(new Error(`[downloadYoutubeVideoWithProgress] yt-dlp download failed (code ${code})`));
           }
         });
       });
